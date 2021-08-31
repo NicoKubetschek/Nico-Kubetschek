@@ -1,0 +1,81 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Aug 29 17:26:24 2021
+
+@author: nicok
+"""
+import numpy as np
+from numpy import loadtxt
+from scipy.signal import  find_peaks, peak_widths
+import matplotlib.pyplot as plt
+from scipy.constants import *
+import scipy.optimize as opt
+from scipy.interpolate import interp1d
+from scipy.signal import savgol_filter
+import pylab as pltt
+
+"""Daten eingeben"""
+d=input("Hier den Name der Textdatei mit .txt Endung eingeben:")
+a = np.loadtxt(d)
+Wellenlänge=a[:,0]*10**-9
+Ausstrahlung=a[:,1]*10E11
+# interpolate + smooth
+"""Daten glätten"""
+xx = np.linspace(Wellenlänge.min(),Wellenlänge.max(), len(Wellenlänge))
+itp = interp1d(Wellenlänge,Ausstrahlung, kind='linear')
+window_size, poly_order = 101, 4
+Geglättet = savgol_filter(itp(xx), window_size, poly_order)
+Wellenlänge1=Geglättet
+"""Daten fitten"""
+def funktion(Wellenlänge,T,s):
+    return (2*pi*h*c**2/(Wellenlänge**5))*(1/(np.exp(h*c/(Wellenlänge*k*T))-1))*s
+(T_,s_), _ = opt.curve_fit(funktion,Wellenlänge,Ausstrahlung,p0=[3000,1])#p0=Startparams for fitting
+fit = funktion(Wellenlänge,T_,s_)
+print(s_)
+"""Plots"""
+plt.figure(figsize=(7,4),dpi=300)
+plt.subplot(2,1,1)
+Nanometer=Wellenlänge*10**9 #für x-Achse in nm
+plt.plot(Nanometer,Ausstrahlung,"*-b",label="Daten",markersize=1,linewidth=0.2) #Daten
+plt.plot(Nanometer,fit,"-k",label="Fit")  #Fit
+#plt.plot(Wellenlänge,funktion(Wellenlänge,2000),"-k")   #Funtion für voregebene Temperatur plotten
+plt.plot(Nanometer,Geglättet,"+r",label="Geglättet",markersize=1)  #geglättet
+plt.xlabel("Wellenlänge in [nm]")
+plt.ylabel("Intensität arb.Units")
+plt.grid()
+plt.legend()
+Temp=T_
+plt.title('Temperatur [K]= %d' % (Temp))
+#print("Temperatur",Temp,"K")
+"""Spektralfarben"""
+x = pltt.linspace(380,780,2)
+y = pltt.linspace(0,5*10**12,2)
+z = [[i for i in x] for j in y]
+CS = pltt.contourf(x, y, z, 200, # \[-1, -0.1, 0, 0.1\],
+                        cmap=pltt.cm.rainbow,alpha=0.8)
+plt.tight_layout()
+
+
+welle=np.linspace(1,2000,2000-1)*10**-9
+z1=funktion(welle,T_,s_)
+welle1=welle*10**9
+
+max=find_peaks(z1)
+print(max)
+plt.subplot(2,1,2)
+plt.plot(Nanometer,Ausstrahlung,"*-b",label="Daten",markersize=1,linewidth=0.2)
+plt.plot(welle1,z1,label="Fit")
+x = pltt.linspace(380,780,2)
+y = pltt.linspace(0,5*10**12,2)
+z = [[i for i in x] for j in y]
+CS = pltt.contourf(x, y, z, 200, # \[-1, -0.1, 0, 0.1\],
+                        cmap=pltt.cm.rainbow,alpha=0.8)
+plt.xlabel("Wellenlänge[nm]")
+plt.ylabel("Intensität arb.Units")
+plt.axvline(max[0],linestyle="--",color="r")
+plt.title('Wellenlänge Max. in [nm]= %d' % (max[0]))
+plt.grid()
+plt.legend()
+plt.tight_layout()
+
+print(T_/max[0])
