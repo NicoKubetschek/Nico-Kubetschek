@@ -1,0 +1,135 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Jul 17 22:57:18 2021
+
+@author: nicok
+"""
+from math import *
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider, Button, Cursor
+
+
+
+init_b = 30*10**-6          #Breite des Spaltes in Meter
+init_d = 150*10**-6          #Abstand der Spalte in Meter
+init_lamb = 550*10**-9       #Wellenlänge des Lichtes in Meter
+init_c=90              #Grenzen der x-Achse
+
+alpha=np.linspace(-init_c,init_c,180000)
+x = np.linspace(radians(-init_c),radians(init_c),180000)
+
+
+"Intensitäten Einzelspalt, Doppelspalt"
+def f(x,b,lamb,d):
+    return  1*((np.sin(np.pi*b/lamb*np.sin(x)))**2)/(((np.pi*b/lamb*np.sin(x)))**2)*1*(np.cos((np.pi*d*np.sin(x))/lamb))**2    #Produkt
+def f1(x,b,lamb):
+    return 1*((np.sin(np.pi*b/lamb*np.sin(x)))**2)/(((np.pi*b/lamb*np.sin(x)))**2) #Doppelsplt
+def f2(x,d,lamb):
+    return 1*(np.cos((np.pi*d*np.sin(x))/lamb))**2    #Einzelspalt
+
+fig=plt.figure(figsize=(8,6))
+ax = fig.add_subplot()
+line, = plt.plot(alpha, f(x, init_b, init_lamb,init_d), lw=2,label="Produkt",color="red")
+line1, = plt.plot(alpha, f1(x, init_b, init_lamb), lw=2,label="Einzelspalt",color="blue",alpha=0.4)
+line2, = plt.plot(alpha, f2(x, init_d, init_lamb), lw=2,label="Doppelspalt",color="lightgrey",alpha=0.4)
+ax.set_xlim(-5,+5)
+plt.legend()
+ax.set_xlabel('Winkel [Grad]')
+axcolor = 'lightgoldenrodyellow'
+ax.margins(x=0)
+# adjust the main plot to make room for the sliders
+plt.subplots_adjust(top=0.8,
+bottom=0.35,
+left=0.255,
+right=0.99,
+hspace=0.2,
+wspace=0.2)
+
+# Make a horizontal slider to control the width.
+axwidth = plt.axes([0.15, 0.05, 0.65, 0.03], facecolor=axcolor)
+width_slider = Slider(
+    ax=axwidth,
+    label='Breite [$m$]',
+    valmin=0,
+    valmax=50*10**-6,
+    valfmt="%1.7f m",
+    valstep=10**-7,
+    closedmin=False,
+    valinit=init_b,
+)
+# Make a horizontal slider to control the width.
+plt.subplots_adjust(left=0.25, bottom=0.25,right=0.85,top=0.8)
+axspace = plt.axes([0.15, 0.15, 0.65, 0.03], facecolor=axcolor)
+space_slider = Slider(
+    ax=axspace,
+    label='Abstand [$m$]',
+    valmin=0,
+    closedmin=False,
+    valmax=300*10**-6,
+    valfmt="%1.6f m",
+    valstep=10**-6, 
+    valinit=init_d,
+)
+# Make a vertically oriented slider to control the wavelength
+axlamb = plt.axes([0.1, 0.25, 0.0225, 0.63], facecolor=axcolor)
+lamb_slider = Slider(
+    ax=axlamb,
+    label="Wellenlänge in m",
+    valmin=200*10**-9,
+    valmax=800*10**-9,
+    valfmt="%1.9f m",
+    valstep=10*10**-9, 
+    valinit=init_lamb,
+    orientation="vertical",
+    color="red"
+)
+
+
+# The function to be called anytime a slider's value changes
+
+def update(val):
+    line1.set_ydata(f1(x,width_slider.val,lamb_slider.val))
+    fig.canvas.draw_idle()
+width_slider.on_changed(update)
+lamb_slider.on_changed(update)
+def update1(val):
+    line2.set_ydata(f2(x,space_slider.val, lamb_slider.val))
+    fig.canvas.draw_idle()
+    
+space_slider.on_changed(update1)
+lamb_slider.on_changed(update1)
+
+def update2(val):
+    line.set_ydata(f(x, width_slider.val, lamb_slider.val, space_slider.val))
+    fig.canvas.draw_idle()
+
+width_slider.on_changed(update2)
+lamb_slider.on_changed(update2)
+space_slider.on_changed(update2)
+
+# Create a `matplotlib.widgets.Button` to reset the sliders to initial values.
+resetax = plt.axes([0.7, 0.9, 0.15, 0.05])
+button = Button(resetax, 'Reset', color=axcolor, hovercolor='0.975')
+def reset(event):
+    lamb_slider.reset()
+    width_slider.reset()
+    space_slider.reset()
+button.on_clicked(reset)
+
+linxlim = plt.axes([0.25, 0.9, 0.15, 0.05])
+button1 = Button(linxlim, 'X-Achse 90°', color="lightgray", hovercolor='0.975')
+def lin(event):
+    ax.set_xlim(-90,+90)
+button1.on_clicked(lin)
+
+linxlim1 = plt.axes([0.475, 0.9, 0.15, 0.05])
+button2 = Button(linxlim1, 'X-Achse 5°', color="lightgray", hovercolor='0.975')
+def lin1(event):
+    ax.set_xlim(-5,+5)
+button2.on_clicked(lin1)
+"""
+multi = Cursor(ax, color='g')
+"""
+
+plt.show()
